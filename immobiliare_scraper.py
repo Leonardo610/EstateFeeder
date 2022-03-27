@@ -7,13 +7,13 @@ def get_result_from_url_immobiliare(url):
     regex_prices = '\d{1,3}(\.\d{3})*'
     response = requests.get(url)
     html = BeautifulSoup(response.text, 'lxml')
-    estate_html = html.find_all('li', class_=re.compile('listing-item listing-item--.*'))
+    estate_html = html.body.find_all('li', class_=re.compile('nd-list__item in-realEstateResults__item'))
     estate_list = []
     for estate in estate_html:
         estate_to_append = {}
-        estate_to_append['link'] = estate.contents[3].contents[1].contents[1].contents[1].attrs['href']
-        estate_to_append['title'] = estate.contents[3].contents[1].contents[1].contents[1].attrs['title']
-        estate_to_append['price'] = re.search(regex_prices, estate.contents[3].contents[1].contents[3].contents[1].text, flags=re.IGNORECASE).group(0)
+        estate_to_append['link'] = estate.contents[0].contents[1].contents[0].attrs['href']
+        estate_to_append['title'] = estate.contents[0].contents[1].contents[0].attrs['title']
+        estate_to_append['price'] = re.search(regex_prices, estate.contents[0].contents[1].contents[1].contents[0].text, flags=re.IGNORECASE).group(0)
         estate_list.append(estate_to_append)
     return estate_list
 

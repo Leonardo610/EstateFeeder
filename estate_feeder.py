@@ -12,6 +12,7 @@ import json
 import time
 import emoji
 from immobiliare_scraper import get_list_from_url_immobiliare, get_data_from_immobiliare, get_result_from_url_immobiliare
+import config
 
 
 TYPE = 1
@@ -495,7 +496,7 @@ def text(update, context):
     
 
 def main():
-    TOKEN = "REPLACE_ME_TOKEN"
+    TOKEN = config.token
 
     persistence = PicklePersistence(filename='conversationbot')
 
