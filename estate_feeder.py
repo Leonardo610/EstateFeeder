@@ -150,6 +150,8 @@ def create_data_model(context):
     context.user_data["max_price"] = None
     context.user_data["min_surface"] = None
     context.user_data["max_surface"] = None
+    context.user_data["searches"] = []
+    context.user_data['notifications'] = False
 
 # function to handle the /start command
 def start(update, context):
@@ -173,7 +175,6 @@ def start_search(update, context):
 
 def get_search_type(update, context):
     context.user_data['selected_zones'] = []
-    context.user_data['notifications'] = False
 
     context.user_data['type'] = update.message.text
     update.message.reply_text(f"Ok, quindi vorresti {context.user_data['type'].lower()}. In quale città vorresti vivere?")
@@ -366,13 +367,16 @@ def getpreferences(update, context):
         update.message.reply_text(f"{preferences_to_str(context.user_data)}", parse_mode=telegram.ParseMode.MARKDOWN)
 
 def startsearch(update, context):
+    try:
+        #store data in user context
+        context.user_data['searches'] = get_data_from_immobiliare(context.user_data, 1, 1) #second param is the number of results for each load more data, third is for the page number of the results
+    except:
+        update.message.reply_text("Non esiste nessuna ricerca salvata. Ricomincia da /start")
+        return
+
     update.message.reply_text("Di seguito i risultati per la tua ricerca:")
     keyboard = [["Carica altri risultati"]]
     reply_markup = ReplyKeyboardMarkup(keyboard, one_time_keyboard=False,resize_keyboard=True)
-
-    #store data in user context
-    context.user_data['searches'] = get_data_from_immobiliare(context.user_data, 1, 1) #second param is the number of results for each load more data, third is for the page number of the results
-
     for search in context.user_data['searches']:
         if len(search['results']) == 0:
             update.message.reply_text(f"Non ci sono risultati per la ricerca su {search['city']}.")
@@ -389,11 +393,14 @@ def getnotifications(update, context):
     if context.user_data["notifications"]:
         update.message.reply_text("Le notifiche sono già attive. Se vuoi fermarle digita /stopnotifications.")
         return
+    if len(context.user_data["searches"]) == 0:
+        update.message.reply_text("Prima di poter attivare le notifiche è necessario eseguire una prima ricerca con /startsearch.")
+        return
 
     context.user_data["notifications"] = True
     update.message.reply_text("Le notifiche sono attive. Se vuoi interrompere quest'operazione digita /stopnotifications")
     
-    context.job_queue.run_repeating(notification, 7200, context=context, name=str(context.user_data['chat_id']))
+    context.job_queue.run_repeating(notification, 600, context=context, name=str(context.user_data['chat_id']))
 
 
 def notification(context):
@@ -409,8 +416,8 @@ def notification(context):
             notification = new_results[i][0]
             job.context.bot.send_message(chat_id=chat_id, text="C'è un nuovo appartamento di tuo interesse:\n\n" + estate_to_str(notification), parse_mode=telegram.ParseMode.MARKDOWN)
             data_is_outdated = True
-        else:
-            job.context.bot.send_message(chat_id=chat_id, text="Nessuna nuova notifica", parse_mode=telegram.ParseMode.MARKDOWN)
+        #else:
+        #    job.context.bot.send_message(chat_id=chat_id, text="Nessuna nuova notifica", parse_mode=telegram.ParseMode.MARKDOWN)
     
     if data_is_outdated:
         saved_results = new_results

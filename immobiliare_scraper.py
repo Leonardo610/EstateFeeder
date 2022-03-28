@@ -1,3 +1,4 @@
+from msilib.schema import Error
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -9,13 +10,17 @@ def get_result_from_url_immobiliare(url):
     html = BeautifulSoup(response.text, 'lxml')
     estate_html = html.body.find_all('li', class_=re.compile('nd-list__item in-realEstateResults__item'))
     estate_list = []
-    for estate in estate_html:
-        estate_to_append = {}
-        estate_to_append['link'] = estate.contents[0].contents[1].contents[0].attrs['href']
-        estate_to_append['title'] = estate.contents[0].contents[1].contents[0].attrs['title']
-        estate_to_append['price'] = re.search(regex_prices, estate.contents[0].contents[1].contents[1].contents[0].text, flags=re.IGNORECASE).group(0)
-        estate_list.append(estate_to_append)
-    return estate_list
+    try:
+        for estate in estate_html:
+            estate_to_append = {}
+            estate_to_append['link'] = estate.contents[0].contents[1].contents[0].attrs['href']
+            estate_to_append['title'] = estate.contents[0].contents[1].contents[0].attrs['title']
+            estate_to_append['price'] = re.search(regex_prices, estate.contents[0].contents[1].contents[1].contents[0].text, flags=re.IGNORECASE).group(0)
+            estate_list.append(estate_to_append)
+        return estate_list
+    except:
+        return estate_list
+    
 
 #save data for each url on immobiliare
 def get_list_from_url_immobiliare(url_list):   
@@ -43,31 +48,34 @@ def get_data_from_immobiliare(user_data, number_of_results, num_page):
 
     if user_data['type'] == "Affittare":
         search_type = 'affitto-case'
-    else:
+    elif user_data['type'] == "Acquistare":
         search_type = 'vendita-case'
     
-    for zone in user_data['selected_zones']:
-        url = f"https://www.immobiliare.it/{search_type}/{transform_label_link(zone['label'])}/?criterio=dataModifica&ordine=desc&noAste=1"
-        if user_data['min_price']:
-            url += f"&prezzoMinimo={user_data['min_price']}"
-        if user_data['max_price']:
-            url += f"&prezzoMassimo={user_data['max_price']}"
-        if user_data['min_surface']:
-            url += f"&superficieMinima={user_data['min_surface']}"
-        if user_data['max_surface']:
-            url += f"&superficieMassima={user_data['max_surface']}"
-        for neighbourhood in zone['neighbourhood']:
-            url += f"&idQuartiere[]={neighbourhood['id']}"
-        
-        if len(list(filter(lambda x : x['city'] == zone['label'] and x['source'] == "Immobiliare", searches))) == 0:
-            searches.append({
-                'city': zone['label'],
-                'url': url,
-                'source': 'Immobiliare'
-            })
+    if len(user_data['selected_zones']) > 0:
+        for zone in user_data['selected_zones']:
+            url = f"https://www.immobiliare.it/{search_type}/{transform_label_link(zone['label'])}/?criterio=dataModifica&ordine=desc&noAste=1"
+            if user_data['min_price']:
+                url += f"&prezzoMinimo={user_data['min_price']}"
+            if user_data['max_price']:
+                url += f"&prezzoMassimo={user_data['max_price']}"
+            if user_data['min_surface']:
+                url += f"&superficieMinima={user_data['min_surface']}"
+            if user_data['max_surface']:
+                url += f"&superficieMassima={user_data['max_surface']}"
+            for neighbourhood in zone['neighbourhood']:
+                url += f"&idQuartiere[]={neighbourhood['id']}"
+            
+            if len(list(filter(lambda x : x['city'] == zone['label'] and x['source'] == "Immobiliare", searches))) == 0:
+                searches.append({
+                    'city': zone['label'],
+                    'url': url,
+                    'source': 'Immobiliare'
+                })
 
-        for search in searches:
-            search['results'] = get_result_from_url_immobiliare(search['url'])
-        
-    return searches
+            for search in searches:
+                search['results'] = get_result_from_url_immobiliare(search['url'])
+            
+        return searches
+    else:
+        raise Error
 
