@@ -1,0 +1,7 @@
+# requirements.txt
+
+python-telegram-bot
+requests
+bs4
+emoji
+lxml

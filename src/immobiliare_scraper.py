@@ -1,4 +1,4 @@
-from msilib.schema import Error
+from estate_feeder import error
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -77,5 +77,5 @@ def get_data_from_immobiliare(user_data, number_of_results, num_page):
             
         return searches
     else:
-        raise Error
+        raise error
 

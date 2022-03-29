@@ -11,7 +11,7 @@ import re
 import json
 import time
 import emoji
-from immobiliare_scraper import get_list_from_url_immobiliare, get_data_from_immobiliare, get_result_from_url_immobiliare
+import immobiliare_scraper
 import config
 
 
@@ -337,7 +337,7 @@ def get_more_data(update, context):
 
                 update.message.reply_text("Sto recuperando altri dati...")
                 
-                new_results = get_result_from_url_immobiliare(url_new_page)
+                new_results = immobiliare_scraper.get_result_from_url_immobiliare(url_new_page)
                 #exit if no new results
                 if len(new_results) == 0:
                     raise ValueError("Nessun risultato aggiuntivo")
@@ -369,7 +369,7 @@ def getpreferences(update, context):
 def startsearch(update, context):
     try:
         #store data in user context
-        context.user_data['searches'] = get_data_from_immobiliare(context.user_data, 1, 1) #second param is the number of results for each load more data, third is for the page number of the results
+        context.user_data['searches'] = immobiliare_scraper.get_data_from_immobiliare(context.user_data, 1, 1) #second param is the number of results for each load more data, third is for the page number of the results
     except:
         update.message.reply_text("Non esiste nessuna ricerca salvata. Ricomincia da /start")
         return
@@ -408,7 +408,7 @@ def notification(context):
     chat_id = job.context.user_data['chat_id']
     list_url = [search['url'] for search in job.context.user_data['searches']]
     saved_results = job.context.user_data['searches']
-    new_results = get_list_from_url_immobiliare([search['url'] for search in job.context.user_data['searches']])
+    new_results = immobiliare_scraper.get_list_from_url_immobiliare([search['url'] for search in job.context.user_data['searches']])
 
     for i in range(len(saved_results)):
         data_is_outdated = False
@@ -505,7 +505,7 @@ def text(update, context):
 def main():
     TOKEN = config.token
 
-    persistence = PicklePersistence(filename='conversationbot')
+    persistence = PicklePersistence(filename='../conversationbot')
 
     # create the updater, that will automatically create also a dispatcher and a queue to 
     # make them dialoge
